@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Sales Forecasting Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --background: #f9fafb;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .navbar {
+            display: flex;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover {
+            background-color: var(--primary-light);
+        }
+        
+        .nav-item.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        input[type="file"] {
+            padding: 8px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary-light);
+        }
+        
+        .flex {
+            display: flex;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .items-center {
+            align-items: center;
+        }
+        
+        .gap-2 {
+            gap: 8px;
+        }
+        
+        .gap-4 {
+            gap: 16px;
+        }
+        
+        .mb-4 {
+            margin-bottom: 16px;
+        }
+        
+        .mb-8 {
+            margin-bottom: 32px;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            position: relative;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .data-table th {
+            font-weight: 600;
+            background-color: var(--primary-light);
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+        
+        .alert-danger {
+            background-color: #fecaca;
+            color: #b91c1c;
+        }
+        
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .slider-value {
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .metric-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-title {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Retail Sales Forecasting Tool</h1>
+        </div>
+        
+        <div class="navbar">
+            <div class="nav-item active" data-tab="upload">Data Upload</div>
+            <div class="nav-item" data-tab="forecast">Forecast</div>
+            <div class="nav-item" data-tab="analysis">Analysis</div>
+            <div class="nav-item" data-tab="export">Export</div>
+        </div>
+        
+        <div id="uploadTab" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">Upload Sales Data</h2>
+                <p class="mb-4">Upload your sales data CSV file with columns for date/period and sales/revenue.</p>
+                
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="fileUpload">CSV File</label>
+                    <input type="file" id="fileUpload" class="form-control" accept=".csv">
+                </div>
+                
+                <div class="flex gap-4">
+                    <button id="uploadBtn" class="btn btn-primary">Upload</button>
+                    <button id="sampleDataBtn" class="btn btn-outline">Use Sample Data</button>
+                </div>
+            </div>
+            
+            <div id="dataPreviewCard" class="card" style="display: none;">
+                <h2 class="card-title">Data Preview</h2>
+                <div class="chart-container mb-4">
+                    <canvas id="dataPreviewChart"></canvas>
+                </div>
+                
+                <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                    <table class="data-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <!-- Data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div id="forecastTab" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Forecast Parameters</h2>
+                
+                <div class="form-group">
+                    <label class="form-label" for="forecastLength">Forecast Periods</label>
+                    <div class="slider-container">
+                        <input type="range" id="forecastLength" min="1" max="12" value="3" class="form-control">
+                        <span id="forecastLengthValue" class="slider-value">3</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="smoothingFactor">Smoothing Factor</label>
+                    <div class="slider-container">
+                        <input type="range" id="smoothingFactor" min="0.1" max="0.9" step="0.1" value="0.3" class="form-control">
+                        <span id="smoothingFactorValue" class="slider-value">0.3</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <div class="flex items-center gap-2">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="seasonalityToggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                            Include Seasonality
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <div class="flex items-center gap-2">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="trendToggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                            Include Trend
+                        </div>
+                    </label>
+                </div>
+                
+                <button id="generateForecastBtn" class="btn btn-primary">Generate Forecast</button>
+            </div>
+            
+            <div id="forecastResultCard" class="card" style="display: none;">
+                <h2 class="card-title">Forecast Results</h2>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Average Sales (Historical)</div>
+                        <div id="avgSalesMetric" class="metric-value">$0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Average Sales (Forecast)</div>
+                        <div id="avgForecastMetric" class="metric-value">$0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Growth Rate</div>
+                        <div id="growthRateMetric" class="metric-value">0%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Forecast Reliability</div>
+                        <div id="reliabilityMetric" class="metric-value">0%</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container mb-4">
+                    <canvas id="forecastChart"></canvas>
+                </div>
+                
+                <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                    <table class="data-table" id="forecastTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Forecast</th>
+                                <th>Lower Bound</th>
+                                <th>Upper Bound</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecastTableBody">
+                            <!-- Forecast data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div id="analysisTab" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Sales Analysis</h2>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Total Sales</div>
+                        <div id="totalSalesMetric" class="metric-value">$0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Average Monthly Sales</div>
+                        <div id="avgMonthlySalesMetric" class="metric-value">$0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Highest Month</div>
+                        <div id="highestMonthMetric" class="metric-value">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Lowest Month</div>
+                        <div id="lowestMonthMetric" class="metric-value">-</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container mb-4">
+                    <canvas id="analysisChart"></canvas>
+                </div>
+                
+                <div class="chart-container mb-4">
+                    <canvas id="seasonalityChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div id="exportTab" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Export Forecast Data</h2>
+                <p class="mb-4">Download your forecast data as a CSV file.</p>
+                
+                <button id="exportCsvBtn" class="btn btn-primary mb-4">Export to CSV</button>
+                <button id="downloadReportBtn" class="btn btn-outline">Generate Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let salesData = [];
+        let forecastData = [];
+        let dataChart = null;
+        let forecastChart = null;
+        let analysisChart = null;
+        let seasonalityChart = null;
+        let trendChart = null;
+        
+        // Sample data
+        const sampleData = [
+            { period: 'Jan', sales: 12000 },
+            { period: 'Feb', sales: 15000 },
+            { period: 'Mar', sales: 18000 },
+            { period: 'Apr', sales: 16000 },
+            { period: 'May', sales: 21000 },
+            { period: 'Jun', sales: 25000 },
+            { period: 'Jul', sales: 27000 },
+            { period: 'Aug', sales: 29000 },
+            { period: 'Sep', sales: 31000 },
+            { period: 'Oct', sales: 28000 },
+            { period: 'Nov', sales: 33000 },
+            { period: 'Dec', sales: 39000 },
+        ];
+        
+        // Tab navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                
+                // Add active class to clicked tab
+                item.classList.add('active');
+                
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show relevant tab content
+                const tabName = item.getAttribute('data-tab');
+                document.getElementById(tabName + 'Tab').classList.add('active');
+            });
+        });
+        
+        // Format currency
+        function formatCurrency(value) {
+            return '$' + parseFloat(value).toLocaleString('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+        
+        // Format percentage
+        function formatPercentage(value) {
+            return parseFloat(value).toLocaleString('en-US', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            }) + '%';
+        }
+        
+        // Update sliders
+        document.getElementById('forecastLength').addEventListener('input', (e) => {
+            document.getElementById('forecastLengthValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('smoothingFactor').addEventListener('input', (e) => {
+            document.getElementById('smoothingFactorValue').textContent = e.target.value;
+        });
+        
+        // Upload button
+        document.getElementById('uploadBtn').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileUpload');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showError('Please select a CSV file.');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        // Check if data has required fields
+                        const firstRow = results.data[0];
+                        const periodKey = Object.keys(firstRow).find(key => 
+                            ['month', 'date', 'period', 'time', 'day'].includes(key.toLowerCase()));
+                        
+                        const salesKey = Object.keys(firstRow).find(key => 
+                            ['sales', 'revenue', 'amount', 'value'].includes(key.toLowerCase()));
+                        
+                        if (!periodKey) {
+                            showError('CSV must contain a period column (month, date, period, time, day)');
+                            return;
+                        }
+                        
+                        if (!salesKey) {
+                            showError('CSV must contain a sales column (sales, revenue, amount, value)');
+                            return;
+                        }
+                        
+                        // Normalize data format
+                        salesData = results.data.map(row => {
+                            return {
+                                period: String(row[periodKey]),
+                                sales: parseFloat(row[salesKey]) || 0
+                            };
+                        });
+                        
+                        // Remove any NaN values
+                        salesData = salesData.filter(row => !isNaN(row.sales));
+                        
+                        if (salesData.length === 0) {
+                            showError('No valid sales data found in CSV');
+                            return;
+                        }
+                        
+                        hideError();
+                        populateDataTable();
+                        createDataChart();
+                        
+                        // Show data preview
+                        document.getElementById('dataPreviewCard').style.display = 'block';
+                        
+                        // Update analysis tab with data
+                        updateAnalysisTab();
+                    } else {
+                        showError('No data found in CSV file');
+                    }
+                },
+                error: function(error) {
+                    showError('Error parsing CSV: ' + error.message);
+                }
+            });
+        });
+        
+        // Sample data button
+        document.getElementById('sampleDataBtn').addEventListener('click', () => {
+            salesData = JSON.parse(JSON.stringify(sampleData)); // Deep copy
+            hideError();
+            populateDataTable();
+            createDataChart();
+            
+            // Show data preview
+            document.getElementById('dataPreviewCard').style.display = 'block';
+            
+            // Update analysis tab with data
+            updateAnalysisTab();
+        });
+        
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Hide error message
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        // Populate data table
+        function populateDataTable() {
+            const tableBody = document.getElementById('dataTableBody');
+            tableBody.innerHTML = '';
+            
+            salesData.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                const periodTd = document.createElement('td');
+                periodTd.textContent = row.period;
+                tr.appendChild(periodTd);
+                
+                const salesTd = document.createElement('td');
+                salesTd.textContent = formatCurrency(row.sales);
+                tr.appendChild(salesTd);
+                
+                tableBody.appendChild(tr);
+            });
+        }
+        
+        // Create data chart
+        function createDataChart() {
+            const ctx = document.getElementById('dataPreviewChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (dataChart) {
+                dataChart.destroy();
+            }
+            
+            dataChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: salesData.map(d => d.period),
+                    datasets: [{
+                        label: 'Historical Sales',
+                        data: salesData.map(d => d.sales),
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Generate forecast button
+        document.getElementById('generateForecastBtn').addEventListener('click', () => {
+            if (!salesData || salesData.length === 0) {
+                showError('Please upload or use sample data first');
+                // Switch to upload tab
+                document.querySelectorAll('.nav-item')[0].click();
+                return;
+            }
+            
+            const forecastLength = parseInt(document.getElementById('forecastLength').value);
+            const smoothingFactor = parseFloat(document.getElementById('smoothingFactor').value);
+            const seasonalityEnabled = document.getElementById('seasonalityToggle').checked;
+            const trendEnabled = document.getElementById('trendToggle').checked;
+            
+            // Generate forecast
+            generateForecast(forecastLength, smoothingFactor, seasonalityEnabled, trendEnabled);
+            
+            // Show results
+            document.getElementById('forecastResultCard').style.display = 'block';
+        });
+        
+        // Export CSV button
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            if (!forecastData || forecastData.length === 0) {
+                showError('Please generate a forecast first');
+                // Switch to forecast tab
+                document.querySelectorAll('.nav-item')[1].click();
+                return;
+            }
+            
+            // Create CSV content
+            let csvContent = 'Period,Forecast,Lower Bound,Upper Bound\n';
+            
+            forecastData.forEach(row => {
+                csvContent += `${row.period},${row.forecast},${row.lowerBound},${row.upperBound}\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'sales_forecast.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // Generate report button
+        document.getElementById('downloadReportBtn').addEventListener('click', () => {
+            if (!salesData || salesData.length === 0 || !forecastData || forecastData.length === 0) {
+                showError('Please upload data and generate a forecast first');
+                return;
+            }
+            
+            // Create HTML report
+            let reportContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Sales Forecast Report</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                    h1 { color: #333; }
+                    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    .summary { margin: 20px 0; }
+                    .summary div { margin: 10px 0; }
+                    .footer { margin-top: 40px; color: #666; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <h1>Sales Forecast Report</h1>
+                <div class="summary">
+                    <div><strong>Generated:</strong> ${new Date().toLocaleDateString()}</div>
+                    <div><strong>Historical Data Periods:</strong> ${salesData.length}</div>
+                    <div><strong>Forecast Periods:</strong> ${forecastData.length}</div>
+                    <div><strong>Average Historical Sales:</strong> ${formatCurrency(calculateAverage(salesData.map(d => d.sales)))}</div>
+                    <div><strong>Average Forecasted Sales:</strong> ${formatCurrency(calculateAverage(forecastData.map(d => d.forecast)))}</div>
+                    <div><strong>Projected Growth Rate:</strong> ${calculateGrowthRate().toFixed(1)}%</div>
+                </div>
+                
+                <h2>Historical Data</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            salesData.forEach(row => {
+                reportContent += `
+                        <tr>
+                            <td>${row.period}</td>
+                            <td>${formatCurrency(row.sales)}</td>
+                        </tr>
+                `;
+            });
+            
+            reportContent += `
+                    </tbody>
+                </table>
+                
+                <h2>Forecast Data</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Forecast</th>
+                            <th>Lower Bound</th>
+                            <th>Upper Bound</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            forecastData.forEach(row => {
+                reportContent += `
+                        <tr>
+                            <td>${row.period}</td>
+                            <td>${formatCurrency(row.forecast)}</td>
+                            <td>${formatCurrency(row.lowerBound)}</td>
+                            <td>${formatCurrency(row.upperBound)}</td>
+                        </tr>
+                `;
+            });
+            
+            reportContent += `
+                    </tbody>
+                </table>
+                
+                <div class="footer">
+                    Generated by Retail Sales Forecasting Tool
+                </div>
+            </body>
+            </html>
+            `;
+            
+            // Create download link
+            const blob = new Blob([reportContent], { type: 'text/html;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'sales_forecast_report.html');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // Generate forecast
+        function generateForecast(periods, smoothingFactor, seasonalityEnabled, trendEnabled) {
+            // Calculate trend
+            let trend = 0;
+            if (trendEnabled && salesData.length > 1) {
+                // Simple linear trend calculation
+                const firstHalf = salesData.slice(0, Math.floor(salesData.length / 2));
+                const secondHalf = salesData.slice(Math.floor(salesData.length / 2));
+                
+                const firstHalfAvg = calculateAverage(firstHalf.map(d => d.sales));
+                const secondHalfAvg = calculateAverage(secondHalf.map(d => d.sales));
+                
+                trend = (secondHalfAvg - firstHalfAvg) / (firstHalf.length);
+                if (isNaN(trend)) trend = 0;
+            }
+            
+            // Calculate seasonality
+            let seasonalFactors = [];
+            if (seasonalityEnabled && salesData.length >= 4) {
+                // Detect if we have 12 months or other pattern
+                const patternLength = detectPatternLength();
+                
+                // Create seasonal factors
+                seasonalFactors = calculateSeasonalFactors(patternLength);
+            }
+            
+            // Create forecast data
+            forecastData = [];
+            const lastValue = salesData[salesData.length - 1].sales;
+            const periods_name = generateNextPeriodNames(periods);
+            
+            for (let i = 0; i < periods; i++) {
+                // Apply exponential smoothing with trend and seasonality (Holt-Winters method simplified)
+                let forecastValue = lastValue + (trend * (i + 1));
+                
+                // Apply seasonality if enabled
+                if (seasonalityEnabled && seasonalFactors.length > 0) {
+                    const seasonIndex = i % seasonalFactors.length;
+                    forecastValue *= seasonalFactors[seasonIndex];
+                }
+                
+                // Apply smoothing
+                forecastValue = lastValue * (1 - smoothingFactor) + forecastValue * smoothingFactor;
+                
+                // Calculate confidence interval (simple approach: wider as we go further)
+                const confidence = 0.1 + (i * 0.05);
+                const lowerBound = forecastValue * (1 - confidence);
+                const upperBound = forecastValue * (1 + confidence);
+                
+                forecastData.push({
+                    period: periods_name[i],
+                    forecast: forecastValue,
+                    lowerBound: lowerBound,
+                    upperBound: upperBound
+                });
+            }
+            
+            // Update metrics
+            updateForecastMetrics();
+            
+            // Create forecast chart
+            createForecastChart();
+            
+            // Populate forecast table
+            populateForecastTable();
+        }
+        
+        // Detect pattern length (monthly, quarterly, etc.)
+        function detectPatternLength() {
+            // Default to 12 (monthly) if we have enough data
+            if (salesData.length >= 12) return 12;
+            
+            // Otherwise use shorter patterns
+            if (salesData.length >= 4) return 4; // Quarterly
+            
+            return salesData.length;
+        }
+        
+        // Calculate seasonal factors
+        function calculateSeasonalFactors(patternLength) {
+            const factors = [];
+            
+            // Calculate average for entire series
+            const globalAverage = calculateAverage(salesData.map(d => d.sales));
+            
+            // Group by pattern position and calculate average
+            for (let i = 0; i < patternLength; i++) {
+                let sum = 0;
+                let count = 0;
+                
+                for (let j = i; j < salesData.length; j += patternLength) {
+                    if (j < salesData.length) {
+                        sum += salesData[j].sales;
+                        count++;
+                    }
+                }
+                
+                const positionAverage = count > 0 ? sum / count : globalAverage;
+                const factor = positionAverage / globalAverage;
+                factors.push(factor);
+            }
+            
+            return factors;
+        }
+        
+        // Generate next period names
+        function generateNextPeriodNames(count) {
+            const result = [];
+            
+            // Check if we have month names
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            
+            let isMonthPattern = false;
+            if (salesData.length >= 3) {
+                // Check if any 3 consecutive periods match month names
+                for (let i = 0; i < salesData.length - 2; i++) {
+                    const p1 = salesData[i].period.substring(0, 3).toLowerCase();
+                    const p2 = salesData[i+1].period.substring(0, 3).toLowerCase();
+                    const p3 = salesData[i+2].period.substring(0, 3).toLowerCase();
+                    
+                    for (let j = 0; j < 10; j++) {
+                        const m1 = monthNames[j % 12].toLowerCase();
+                        const m2 = monthNames[(j+1) % 12].toLowerCase();
+                        const m3 = monthNames[(j+2) % 12].toLowerCase();
+                        
+                        if ((p1.includes(m1) || m1.includes(p1)) && 
+                            (p2.includes(m2) || m2.includes(p2)) && 
+                            (p3.includes(m3) || m3.includes(p3))) {
+                            isMonthPattern = true;
+                            break;
+                        }
+                    }
+                    if (isMonthPattern) break;
+                }
+            }
+            
+            if (isMonthPattern) {
+                // Find the last month
+                let lastMonthIndex = -1;
+                const lastPeriod = salesData[salesData.length - 1].period.substring(0, 3).toLowerCase();
+                
+                for (let i = 0; i < 12; i++) {
+                    if (lastPeriod.includes(monthNames[i].toLowerCase()) || 
+                        monthNames[i].toLowerCase().includes(lastPeriod)) {
+                        lastMonthIndex = i;
+                        break;
+                    }
+                }
+                
+                if (lastMonthIndex >= 0) {
+                    for (let i = 0; i < count; i++) {
+                        result.push(monthNames[(lastMonthIndex + i + 1) % 12]);
+                    }
+                    return result;
+                }
+            }
+            
+            // If not months, use numeric sequence
+            const lastPeriod = salesData[salesData.length - 1].period;
+            
+            // Try to extract numeric value if present
+            const numMatch = lastPeriod.match(/\d+/);
+            if (numMatch) {
+                const lastNum = parseInt(numMatch[0]);
+                const prefix = lastPeriod.substring(0, numMatch.index);
+                const suffix = lastPeriod.substring(numMatch.index + numMatch[0].length);
+                
+                for (let i = 0; i < count; i++) {
+                    result.push(`${prefix}${lastNum + i + 1}${suffix}`);
+                }
+            } else {
+                // Just use generic period names
+                for (let i = 0; i < count; i++) {
+                    result.push(`Period ${i + 1}`);
+                }
+            }
+            
+            return result;
+        }
+        
+        // Update forecast metrics
+        function updateForecastMetrics() {
+            const avgHistorical = calculateAverage(salesData.map(d => d.sales));
+            const avgForecast = calculateAverage(forecastData.map(d => d.forecast));
+            const growthRate = calculateGrowthRate();
+            const reliability = calculateReliability();
+            
+            document.getElementById('avgSalesMetric').textContent = formatCurrency(avgHistorical);
+            document.getElementById('avgForecastMetric').textContent = formatCurrency(avgForecast);
+            document.getElementById('growthRateMetric').textContent = formatPercentage(growthRate);
+            document.getElementById('reliabilityMetric').textContent = formatPercentage(reliability);
+        }
+        
+        // Calculate average
+        function calculateAverage(values) {
+            if (!values || values.length === 0) return 0;
+            return values.reduce((sum, val) => sum + val, 0) / values.length;
+        }
+        
+        // Calculate growth rate
+        function calculateGrowthRate() {
+            if (!salesData || salesData.length === 0 || !forecastData || forecastData.length === 0) return 0;
+            
+            const avgHistorical = calculateAverage(salesData.map(d => d.sales));
+            const avgForecast = calculateAverage(forecastData.map(d => d.forecast));
+            
+            return ((avgForecast - avgHistorical) / avgHistorical) * 100;
+        }
+        
+        // Calculate reliability score (simplified)
+        function calculateReliability() {
+            // This is a simplified approach to estimate forecast reliability
+            if (!salesData || salesData.length < 6) return 50; // Not enough data
+            
+            // More data = more reliable
+            let reliabilityScore = Math.min(80, 50 + (salesData.length / 2));
+            
+            // Check for high variation which reduces reliability
+            const values = salesData.map(d => d.sales);
+            const mean = calculateAverage(values);
+            const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+            const stdDev = Math.sqrt(variance);
+            const coefficientOfVariation = (stdDev / mean);
+            
+            // Adjust reliability based on variation
+            if (coefficientOfVariation > 0.5) {
+                reliabilityScore -= 20;
+            } else if (coefficientOfVariation > 0.3) {
+                reliabilityScore -= 10;
+            }
+            
+            // Check for trend consistency
+            const firstHalf = salesData.slice(0, Math.floor(salesData.length / 2)).map(d => d.sales);
+            const secondHalf = salesData.slice(Math.floor(salesData.length / 2)).map(d => d.sales);
+            
+            const firstHalfAvg = calculateAverage(firstHalf);
+            const secondHalfAvg = calculateAverage(secondHalf);
+            
+            const trend = (secondHalfAvg - firstHalfAvg) / firstHalfAvg;
+            
+            // If the trend is very strong in either direction, it's harder to predict
+            if (Math.abs(trend) > 0.5) {
+                reliabilityScore -= 10;
+            }
+            
+            return Math.max(30, Math.min(95, reliabilityScore));
+        }
+        
+        // Populate forecast table
+        function populateForecastTable() {
+            const tableBody = document.getElementById('forecastTableBody');
+            tableBody.innerHTML = '';
+            
+            forecastData.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                const periodTd = document.createElement('td');
+                periodTd.textContent = row.period;
+                tr.appendChild(periodTd);
+                
+                const forecastTd = document.createElement('td');
+                forecastTd.textContent = formatCurrency(row.forecast);
+                tr.appendChild(forecastTd);
+                
+                const lowerBoundTd = document.createElement('td');
+                lowerBoundTd.textContent = formatCurrency(row.lowerBound);
+                tr.appendChild(lowerBoundTd);
+                
+                const upperBoundTd = document.createElement('td');
+                upperBoundTd.textContent = formatCurrency(row.upperBound);
+                tr.appendChild(upperBoundTd);
+                
+                tableBody.appendChild(tr);
+            });
+        }
+        
+        // Create forecast chart
+        function createForecastChart() {
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (forecastChart) {
+                forecastChart.destroy();
+            }
+            
+            // Combine historical and forecast data for the chart
+            const labels = [...salesData.map(d => d.period), ...forecastData.map(d => d.period)];
+            const historicalData = [...salesData.map(d => d.sales), ...Array(forecastData.length).fill(null)];
+            const forecastValues = [...Array(salesData.length).fill(null), ...forecastData.map(d => d.forecast)];
+            const lowerBoundValues = [...Array(salesData.length).fill(null), ...forecastData.map(d => d.lowerBound)];
+            const upperBoundValues = [...Array(salesData.length).fill(null), ...forecastData.map(d => d.upperBound)];
+            
+            forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Historical Sales',
+                            data: historicalData,
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Forecast',
+                            data: forecastValues,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Upper Bound',
+                            data: upperBoundValues,
+                            borderColor: 'rgba(16, 185, 129, 0.3)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            borderWidth: 1,
+                            fill: '+1',
+                            tension: 0.2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Lower Bound',
+                            data: lowerBoundValues,
+                            borderColor: 'rgba(16, 185, 129, 0.3)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            borderWidth: 1,
+                            fill: false,
+                            tension: 0.2,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.raw === null) return '';
+                                    return formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update analysis tab
+        function updateAnalysisTab() {
+            if (!salesData || salesData.length === 0) return;
+            
+            // Calculate metrics
+            const totalSales = salesData.reduce((sum, row) => sum + row.sales, 0);
+            const avgMonthlySales = totalSales / salesData.length;
+            
+            // Find highest and lowest months
+            let highestMonth = salesData[0];
+            let lowestMonth = salesData[0];
+            
+            salesData.forEach(row => {
+                if (row.sales > highestMonth.sales) {
+                    highestMonth = row;
+                }
+                if (row.sales < lowestMonth.sales) {
+                    lowestMonth = row;
+                }
+            });
+            
+            // Update metrics
+            document.getElementById('totalSalesMetric').textContent = formatCurrency(totalSales);
+            document.getElementById('avgMonthlySalesMetric').textContent = formatCurrency(avgMonthlySales);
+            document.getElementById('highestMonthMetric').textContent = `${highestMonth.period} (${formatCurrency(highestMonth.sales)})`;
+            document.getElementById('lowestMonthMetric').textContent = `${lowestMonth.period} (${formatCurrency(lowestMonth.sales)})`;
+            
+            // Create charts
+            createAnalysisCharts();
+        }
+        
+        // Create analysis charts
+        function createAnalysisCharts() {
+            // Main analysis chart (bar chart)
+            const analysisCtx = document.getElementById('analysisChart').getContext('2d');
+            if (analysisChart) {
+                analysisChart.destroy();
+            }
+            
+            analysisChart = new Chart(analysisCtx, {
+                type: 'bar',
+                data: {
+                    labels: salesData.map(d => d.period),
+                    datasets: [{
+                        label: 'Sales by Period',
+                        data: salesData.map(d => d.sales),
+                        backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                        borderColor: '#4f46e5',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Seasonality chart
+            const seasonalityCtx = document.getElementById('seasonalityChart').getContext('2d');
+            if (seasonalityChart) {
+                seasonalityChart.destroy();
+            }
+            
+            // Detect pattern length
+            const patternLength = detectPatternLength();
+            const seasonalFactors = calculateSeasonalFactors(patternLength);
+            
+            seasonalityChart = new Chart(seasonalityCtx, {
+                type: 'radar',
+                data: {
+                    labels: generatePatternLabels(patternLength),
+                    datasets: [{
+                        label: 'Seasonal Pattern',
+                        data: seasonalFactors.map(f => f * 100),
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: false,
+                            min: Math.max(50, Math.min(...seasonalFactors) * 100 - 10),
+                            max: Math.min(150, Math.max(...seasonalFactors) * 100 + 10),
+                            ticks: {
+                                backdropColor: 'rgba(0, 0, 0, 0)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    return value > 100 ? 
+                                        `${value.toFixed(1)}% (above average)` : 
+                                        `${value.toFixed(1)}% (below average)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Trend chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) {
+                trendChart.destroy();
+            }
+            
+            // Calculate trend line
+            const xValues = Array.from(Array(salesData.length).keys());
+            const yValues = salesData.map(d => d.sales);
+            
+            const trendLine = calculateTrendLine(xValues, yValues);
+            const trendData = xValues.map(x => trendLine.slope * x + trendLine.intercept);
+            
+            trendChart = new Chart(trendCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Sales Data',
+                            data: salesData.map((d, i) => ({x: i, y: d.sales})),
+                            backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                            pointRadius: 6
+                        },
+                        {
+                            label: 'Trend Line',
+                            data: trendData.map((y, x) => ({x, y})),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(0, 0, 0, 0)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            type: 'line'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const datasetLabel = context.dataset.label;
+                                    if (datasetLabel === 'Sales Data') {
+                                        return `${salesData[context.parsed.x].period}: ${formatCurrency(context.parsed.y)}`;
+                                    }
+                                    return formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Time Period'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value < salesData.length && value >= 0) {
+                                        return salesData[value].period;
+                                    }
+                                    return '';
+                                },
+                                stepSize: Math.ceil(salesData.length / 10) // Limit number of labels to avoid overcrowding
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Sales'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Generate pattern labels
+        function generatePatternLabels(patternLength) {
+            // Check if we can use month labels
+            if (patternLength === 12) {
+                return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            }
+            
+            if (patternLength === 4) {
+                return ["Q1", "Q2", "Q3", "Q4"];
+            }
+            
+            // Generic labels
+            return Array.from(Array(patternLength).keys()).map(i => `Period ${i+1}`);
+        }
+        
+        // Calculate trend line using linear regression
+        function calculateTrendLine(xValues, yValues) {
+            const n = xValues.length;
+            
+            if (n < 2) {
+                return { slope: 0, intercept: yValues[0] || 0 };
+            }
+            
+            let sumX = 0;
+            let sumY = 0;
+            let sumXY = 0;
+            let sumXX = 0;
+            
+            for (let i = 0; i < n; i++) {
+                sumX += xValues[i];
+                sumY += yValues[i];
+                sumXY += xValues[i] * yValues[i];
+                sumXX += xValues[i] * xValues[i];
+            }
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            return { slope, intercept };
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start with upload tab active
+            document.querySelectorAll('.nav-item')[0].click();
+        });
+    </script>
+</body>
+</html>
