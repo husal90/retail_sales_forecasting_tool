@@ -111,6 +111,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - Save/load forecast projects
 - Anomaly detection in historical data
 
-## 👤 Author
+## Author
 
 GitHub: [@husal90](https://github.com/husal90)
